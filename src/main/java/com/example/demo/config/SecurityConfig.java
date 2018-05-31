@@ -2,6 +2,8 @@ package com.example.demo.config;
 
 import com.example.demo.config.jwt.JWTConfigurer;
 import com.example.demo.config.jwt.TokenProvider;
+
+import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,19 +21,23 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private TokenProvider tokenProvider;
+    private PasswordEncoder passwordEncoder;
 
-    public SecurityConfig(TokenProvider tokenProvider){
+    public SecurityConfig(TokenProvider tokenProvider, PasswordEncoder passwordEncoder){
         this.tokenProvider = tokenProvider;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth)
             throws Exception {
 
+    	auth.authenticationProvider(customAuthenticationProvider());
         auth.inMemoryAuthentication()
-                .withUser("admin").password("password").authorities("ROLE_ADMIN")
+                .withUser("admin").password(passwordEncoder.encode("adminPass")).authorities("ROLE_ADMIN")
                 .and()
-                .withUser("user").password("password").authorities("ROLE_USER");
+                .withUser("user").password(passwordEncoder.encode("userPass")).authorities("ROLE_USER");
+    	
     }
 
     @Override
@@ -64,9 +70,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return new JWTConfigurer(tokenProvider);
     }
 
+    
+    
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public CustomAuthenticationProvider customAuthenticationProvider(){
+    	return new CustomAuthenticationProvider();
     }
 
     //Entry point
